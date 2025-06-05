@@ -3,19 +3,19 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Auto Kolase Gambar dengan Crop - ADAM GAGAH</title>
+<title>Manual Posisi Kolase - ADAM GAGAH</title>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
 <style>
   body {
     margin: 0; padding: 20px;
     font-family: 'Poppins', sans-serif;
-    background: linear-gradient(145deg, #0d1b2a, #1b263b, #415a77);
-    color: #e0f7f7;
-    min-height: 100vh;
-    position: relative;
+    background: linear-gradient(135deg, #0d1b2a, #1b263b);
+    color: #d0f0f0;
     display: flex;
     flex-direction: column;
     align-items: center;
+    min-height: 100vh;
+    position: relative;
   }
   body::before {
     content: "ADAM GAGAH";
@@ -29,80 +29,89 @@
     pointer-events: none;
     user-select: none;
     z-index: 0;
-    white-space: nowrap;
     letter-spacing: 10px;
+    white-space: nowrap;
   }
   h1 {
-    margin-bottom: 20px;
-    font-weight: 600;
-    text-shadow: 0 0 15px rgba(100,223,223,0.7);
+    margin-bottom: 15px;
     z-index: 1;
+    text-shadow: 0 0 15px rgba(100,223,223,0.7);
   }
   #uploadSection {
-    background: rgba(255,255,255,0.08);
-    padding: 20px;
-    border-radius: 14px;
-    box-shadow: 0 0 20px rgba(100,223,223,0.35);
-    width: 100%;
-    max-width: 700px;
-    text-align: center;
+    margin-bottom: 15px;
     z-index: 1;
   }
-  input[type="file"] {
-    background: #64dfdf;
-    border: none;
-    padding: 10px 16px;
-    color: #000;
-    font-weight: 600;
-    border-radius: 8px;
-    cursor: pointer;
-    box-shadow: 0 0 15px #64dfdf;
-    transition: background-color 0.3s ease;
-  }
-  input[type="file"]:hover {
-    background: #48bfe3;
-  }
-  #cropContainer {
-    margin-top: 25px;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 18px;
-    max-width: 900px;
-    width: 100%;
-    z-index: 1;
-  }
-  .cropBox {
-    width: 180px;
-    height: 180px;
-    overflow: hidden;
+  #canvasWrapper {
     position: relative;
-    border-radius: 12px;
-    box-shadow: 0 0 15px rgba(100,223,223,0.35);
-    background: #0f1e33;
-    cursor: grab;
-  }
-  .cropBox:active {
-    cursor: grabbing;
-  }
-  .cropImg {
-    position: absolute;
-    top: 0; left: 0;
+    width: 900px;
+    height: 600px;
+    background: #112240;
+    border-radius: 15px;
+    box-shadow: 0 0 30px rgba(100,223,223,0.5);
+    overflow: hidden;
     user-select: none;
-    -webkit-user-drag: none;
-    max-width: none;
+    touch-action: none;
+    z-index: 1;
   }
-  #buttons {
-    margin-top: 20px;
+  canvas#baseCanvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    border-radius: 15px;
+  }
+  .draggable-image {
+    position: absolute;
+    cursor: grab;
+    border: 2px solid #64dfdf;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #0b1521;
+    box-shadow: 0 0 8px #64dfdf;
+  }
+  .draggable-image.dragging {
+    cursor: grabbing;
+    opacity: 0.9;
+    box-shadow: 0 0 20px #48bfe3;
+    z-index: 1000 !important;
+  }
+  .draggable-image img {
+    display: block;
+    max-width: 100%;
+    max-height: 100%;
+    user-select: none;
+    pointer-events: none;
+  }
+  .resize-slider {
+    position: absolute;
+    bottom: 6px;
+    left: 6px;
+    width: calc(100% - 12px);
+    -webkit-appearance: none;
+    background: #64dfdf;
+    border-radius: 8px;
+    height: 6px;
+    cursor: pointer;
+    outline: none;
+  }
+  .resize-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    background: #0f1e33;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 10px #64dfdf;
+  }
+  #controls {
+    margin-top: 15px;
     display: flex;
     gap: 15px;
-    justify-content: center;
     z-index: 1;
   }
   button {
     background: #64dfdf;
     border: none;
-    padding: 14px 28px;
+    padding: 14px 26px;
     font-weight: 700;
     font-size: 16px;
     border-radius: 10px;
@@ -113,266 +122,245 @@
   button:hover {
     background: #48bfe3;
   }
-  #canvasWrapper {
-    margin-top: 30px;
-    max-width: 900px;
-    width: 100%;
-    background: rgba(255,255,255,0.08);
-    border-radius: 14px;
-    box-shadow: 0 0 20px rgba(100,223,223,0.35);
-    padding: 10px;
-    display: none;
-    z-index: 1;
-  }
-  canvas {
-    display: block;
-    max-width: 100%;
-    border-radius: 12px;
-  }
   footer {
     margin-top: auto;
-    font-size: 13px;
-    color: rgba(255,255,255,0.4);
     font-weight: 600;
-    z-index: 1;
+    font-size: 14px;
+    color: rgba(255,255,255,0.3);
+    user-select: none;
   }
 </style>
 </head>
 <body>
-  <h1>Auto Kolase Gambar dengan Crop</h1>
+  <h1>Manual Posisi Kolase Gambar</h1>
   <div id="uploadSection">
     <input type="file" id="imageInput" multiple accept="image/*" />
-    <p style="margin-top: 14px; font-size: 14px; color: #a0dede;">
-      Pilih beberapa gambar, lalu atur posisi crop dengan drag gambar di tiap kotak.
-    </p>
-  </div>
-
-  <div id="cropContainer"></div>
-
-  <div id="buttons">
-    <button id="createBtn" disabled>Buat Kolase</button>
-    <button id="resetBtn" disabled>Reset Semua</button>
   </div>
 
   <div id="canvasWrapper">
-    <canvas id="collageCanvas"></canvas>
+    <canvas id="baseCanvas" width="900" height="600"></canvas>
+  </div>
+
+  <div id="controls">
+    <button id="createBtn" disabled>Buat Kolase</button>
+    <button id="resetBtn" disabled>Reset Semua</button>
   </div>
 
   <button id="downloadBtn" style="display:none; margin-top:20px;">Download Kolase HD</button>
 
   <footer>© ADAM GAGAH</footer>
 
-  <script>
-    const imageInput = document.getElementById('imageInput');
-    const cropContainer = document.getElementById('cropContainer');
-    const createBtn = document.getElementById('createBtn');
-    const resetBtn = document.getElementById('resetBtn');
-    const canvasWrapper = document.getElementById('canvasWrapper');
-    const canvas = document.getElementById('collageCanvas');
-    const ctx = canvas.getContext('2d');
-    const downloadBtn = document.getElementById('downloadBtn');
+<script>
+  const imageInput = document.getElementById('imageInput');
+  const canvasWrapper = document.getElementById('canvasWrapper');
+  const baseCanvas = document.getElementById('baseCanvas');
+  const ctx = baseCanvas.getContext('2d');
+  const createBtn = document.getElementById('createBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  const downloadBtn = document.getElementById('downloadBtn');
 
-    let cropData = []; // {img: Image, posX, posY, naturalWidth, naturalHeight}
-    let dragState = null; // {index, startX, startY, imgStartX, imgStartY}
+  const canvasWidth = baseCanvas.width;
+  const canvasHeight = baseCanvas.height;
 
-    function createCropBoxes(images) {
-      cropContainer.innerHTML = '';
-      cropData = [];
+  let images = []; // {div, img, posX, posY, width, height, scale, isDragging, offsetX, offsetY, slider}
 
-      images.forEach((img, idx) => {
-        // Reset position
-        const posX = 0;
-        const posY = 0;
+  // Create draggable image element
+  function createDraggableImage(img) {
+    const div = document.createElement('div');
+    div.className = 'draggable-image';
+    div.style.left = '10px';
+    div.style.top = '10px';
+    div.style.width = '180px';
+    div.style.height = '180px';
+    div.style.zIndex = images.length + 1;
 
-        const cropBox = document.createElement('div');
-        cropBox.className = 'cropBox';
+    const imageEl = document.createElement('img');
+    imageEl.src = img.src;
+    div.appendChild(imageEl);
 
-        const cropImg = document.createElement('img');
-        cropImg.src = img.src;
-        cropImg.className = 'cropImg';
+    // Resize slider
+    const slider = document.createElement('input');
+    slider.type = 'range';
+    slider.min = 50;
+    slider.max = 300;
+    slider.value = 180;
+    slider.className = 'resize-slider';
+    div.appendChild(slider);
 
-        // Set natural size for calculations
-        cropImg.style.top = posY + 'px';
-        cropImg.style.left = posX + 'px';
+    canvasWrapper.appendChild(div);
 
-        cropBox.appendChild(cropImg);
-        cropContainer.appendChild(cropBox);
+    const imageData = {
+      div,
+      img: imageEl,
+      posX: 10,
+      posY: 10,
+      width: 180,
+      height: 180,
+      scale: 1,
+      isDragging: false,
+      offsetX: 0,
+      offsetY: 0,
+      slider
+    };
 
-        cropData.push({
-          img,
-          posX,
-          posY,
-          naturalWidth: img.naturalWidth,
-          naturalHeight: img.naturalHeight,
-          cropBox,
-          cropImg
-        });
+    // Mouse drag handlers
+    div.addEventListener('mousedown', (e) => {
+      if(e.target === slider) return; // Jangan drag pas slider di-klik
+      imageData.isDragging = true;
+      imageData.offsetX = e.clientX - div.offsetLeft;
+      imageData.offsetY = e.clientY - div.offsetTop;
+      div.classList.add('dragging');
+      // Bawa div ke atas
+      images.forEach((img, i) => img.div.style.zIndex = i + 1);
+      div.style.zIndex = images.length + 1000;
+    });
 
-        // Drag handling
-        cropImg.addEventListener('mousedown', (e) => {
-          e.preventDefault();
-          dragState = {
-            index: idx,
-            startX: e.clientX,
-            startY: e.clientY,
-            imgStartX: cropData[idx].posX,
-            imgStartY: cropData[idx].posY
-          };
-          cropImg.style.cursor = 'grabbing';
-        });
-        window.addEventListener('mouseup', () => {
-          if (dragState !== null) {
-            cropData[dragState.index].posX = cropData[dragState.index].posX;
-            cropData[dragState.index].posY = cropData[dragState.index].posY;
-            cropData[dragState.index].cropImg.style.cursor = 'grab';
-          }
-          dragState = null;
-        });
-        window.addEventListener('mousemove', (e) => {
-          if (!dragState) return;
-          e.preventDefault();
+    window.addEventListener('mouseup', () => {
+      if(imageData.isDragging) {
+        imageData.isDragging = false;
+        div.classList.remove('dragging');
+      }
+    });
 
-          const data = cropData[dragState.index];
-          const cropBoxRect = data.cropBox.getBoundingClientRect();
+    window.addEventListener('mousemove', (e) => {
+      if (!imageData.isDragging) return;
+      e.preventDefault();
+      let newX = e.clientX - imageData.offsetX;
+      let newY = e.clientY - imageData.offsetY;
 
-          let newX = data.imgStartX + (e.clientX - dragState.startX);
-          let newY = data.imgStartY + (e.clientY - dragState.startY);
+      // Batasi supaya tidak keluar canvas
+      if(newX < 0) newX = 0;
+      if(newY < 0) newY = 0;
+      if(newX + div.offsetWidth > canvasWidth) newX = canvasWidth - div.offsetWidth;
+      if(newY + div.offsetHeight > canvasHeight) newY = canvasHeight - div.offsetHeight;
 
-          // Batasi supaya gambar tidak keluar terlalu jauh dari cropBox (biar selalu cover cropBox)
-          const maxLeft = 0;
-          const maxTop = 0;
-          const minLeft = cropBoxRect.width - data.naturalWidth * (cropBoxRect.height / data.naturalHeight);
-          const minTop = cropBoxRect.height - cropBoxRect.height; // Karena kita scale height ke cropBox height
+      div.style.left = newX + 'px';
+      div.style.top = newY + 'px';
+      imageData.posX = newX;
+      imageData.posY = newY;
+    });
 
-          // Kalkulasi scale img supaya tinggi cropBox selalu penuh
-          const scale = cropBoxRect.height / data.naturalHeight;
-          const scaledWidth = data.naturalWidth * scale;
+    // Slider resize handler
+    slider.addEventListener('input', (e) => {
+      const val = parseInt(e.target.value);
+      div.style.width = val + 'px';
+      div.style.height = val + 'px';
+      imageData.width = val;
+      imageData.height = val;
+    });
 
-          // Limit newX dan newY supaya minimal gambar masih nutup cropBox
-          if (newX > maxLeft) newX = maxLeft;
-          if (newX < cropBoxRect.width - scaledWidth) newX = cropBoxRect.width - scaledWidth;
-          if (newY !== 0) newY = 0; // Vertikal gak di geser karena kita sesuaikan tinggi pas cropBox tinggi
+    return imageData;
+  }
 
-          data.posX = newX;
-          data.posY = newY;
-          data.cropImg.style.left = newX + 'px';
-          data.cropImg.style.top = newY + 'px';
-        });
+  imageInput.addEventListener('change', async (e) => {
+    resetAll();
+
+    const files = e.target.files;
+    if(files.length === 0) return;
+
+    const loadedImages = await Promise.all(Array.from(files).map(file => {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error('Gagal load gambar'));
+        img.src = URL.createObjectURL(file);
       });
-      createBtn.disabled = false;
-      resetBtn.disabled = false;
-      downloadBtn.style.display = 'none';
-      canvasWrapper.style.display = 'none';
-    }
+    }));
 
-    function drawCollage(imagesData, scale=1) {
-      const count = imagesData.length;
-      if (count === 0) return;
-
-      // Grid sama seperti sebelumnya
-      const cols = Math.ceil(Math.sqrt(count));
-      const rows = Math.ceil(count / cols);
-
-      const canvasWidth = 900 * scale;
-      const canvasHeight = Math.floor(canvasWidth * rows / cols);
-
-      canvas.width = canvasWidth;
-      canvas.height = canvasHeight;
-
-      ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-
-      const cellWidth = canvasWidth / cols;
-      const cellHeight = canvasHeight / rows;
-
-      imagesData.forEach((data, i) => {
-        const col = i % cols;
-        const row = Math.floor(i / cols);
-
-        const x = col * cellWidth;
-        const y = row * cellHeight;
-
-        // Crop dan draw sesuai posisi posX, posY dan ukuran cropBox (180x180)
-        const cropBoxSize = 180;
-
-        const scaleFactor = (cellHeight / cropBoxSize) * scale;
-
-        // Ukuran natural gambar
-        const nw = data.naturalWidth;
-        const nh = data.naturalHeight;
-
-        // Skala tinggi gambar agar pas cropBox tinggi (180)
-        const scaleImg = cropBoxSize / nh;
-
-        // Posisi crop dari gambar natural
-        const cropX = -data.posX / scaleImg;
-        const cropY = 0; // Vertikal tidak geser karena sudah pas tinggi cropBox
-
-        const cropW = cropBoxSize / scaleImg;
-        const cropH = nh;
-
-        // Ukuran gambar di canvas cell
-        const drawW = nw * scaleImg * scaleFactor;
-        const drawH = nh * scaleImg * scaleFactor;
-
-        ctx.drawImage(
-          data.img,
-          cropX, cropY, cropW, cropH,
-          x, y,
-          drawW, drawH
-        );
-      });
-    }
-
-    imageInput.addEventListener('change', async (e) => {
-      const files = e.target.files;
-      if (files.length === 0) return;
-
-      const images = await Promise.all(Array.from(files).map(file => {
-        return new Promise((resolve, reject) => {
-          const img = new Image();
-          img.onload = () => resolve(img);
-          img.onerror = () => reject(new Error("Gagal load gambar"));
-          img.src = URL.createObjectURL(file);
-        });
-      }));
-
-      createCropBoxes(images);
+    loadedImages.forEach(img => {
+      const draggable = createDraggableImage(img);
+      images.push(draggable);
     });
 
-    createBtn.addEventListener('click', () => {
-      drawCollage(cropData, 1);
-      canvasWrapper.style.display = 'block';
-      downloadBtn.style.display = 'inline-block';
+    createBtn.disabled = false;
+    resetBtn.disabled = false;
+  });
+
+  function resetAll() {
+    // Hapus elemen draggable
+    images.forEach(i => canvasWrapper.removeChild(i.div));
+    images = [];
+    createBtn.disabled = true;
+    resetBtn.disabled = true;
+    downloadBtn.style.display = 'none';
+
+    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+  }
+
+  resetBtn.addEventListener('click', resetAll);
+
+  createBtn.addEventListener('click', () => {
+    if(images.length === 0) return;
+
+    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+
+    // Background hitam gelap
+    ctx.fillStyle = '#0a1626';
+    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+    // Watermark
+    ctx.save();
+    ctx.font = 'bold 80px Poppins';
+    ctx.fillStyle = 'rgba(100, 223, 223, 0.07)';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.translate(canvasWidth / 2, canvasHeight / 2);
+    ctx.rotate(-Math.PI / 4);
+    ctx.fillText('ADAM GAGAH', 0, 0);
+    ctx.restore();
+
+    images.forEach(i => {
+      // Draw scaled image in canvas at set position
+      ctx.drawImage(i.img, i.posX, i.posY, i.width, i.height);
     });
 
-    resetBtn.addEventListener('click', () => {
-      cropContainer.innerHTML = '';
-      cropData = [];
-      imageInput.value = '';
-      canvasWrapper.style.display = 'none';
-      downloadBtn.style.display = 'none';
-      createBtn.disabled = true;
-      resetBtn.disabled = true;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    downloadBtn.style.display = 'inline-block';
+  });
+
+  downloadBtn.addEventListener('click', () => {
+    // Buat canvas HD 2x
+    const hdCanvas = document.createElement('canvas');
+    hdCanvas.width = canvasWidth * 2;
+    hdCanvas.height = canvasHeight * 2;
+    const hdCtx = hdCanvas.getContext('2d');
+
+    // Background hitam gelap
+    hdCtx.fillStyle = '#0a1626';
+    hdCtx.fillRect(0, 0, hdCanvas.width, hdCanvas.height);
+
+    // Watermark HD
+    hdCtx.save();
+    hdCtx.font = 'bold 160px Poppins';
+    hdCtx.fillStyle = 'rgba(100, 223, 223, 0.07)';
+    hdCtx.textAlign = 'center';
+    hdCtx.textBaseline = 'middle';
+    hdCtx.translate(hdCanvas.width / 2, hdCanvas.height / 2);
+    hdCtx.rotate(-Math.PI / 4);
+    hdCtx.fillText('ADAM GAGAH', 0, 0);
+    hdCtx.restore();
+
+    // Draw images HD scaled
+    images.forEach(i => {
+      hdCtx.drawImage(i.img,
+        i.posX * 2,
+        i.posY * 2,
+        i.width * 2,
+        i.height * 2
+      );
     });
 
-    downloadBtn.addEventListener('click', () => {
-      if (cropData.length === 0) return;
+    // Download link
+    const hdImage = hdCanvas.toDataURL('image/png');
 
-      drawCollage(cropData, 2); // HD 2x
+    const link = document.createElement('a');
+    link.download = 'kolase_hd.png';
+    link.href = hdImage;
+    link.click();
 
-      const hdImage = canvas.toDataURL('image/png');
-
-      drawCollage(cropData, 1);
-
-      const link = document.createElement('a');
-      link.download = 'kolase-adam-gagah.png';
-      link.href = hdImage;
-      link.click();
-
-      // Reset gambar & UI setelah download
-      resetBtn.click();
-    });
-  </script>
+    // Reset all after download
+    resetAll();
+    imageInput.value = ''; // reset input
+  });
+</script>
 </body>
 </html>
