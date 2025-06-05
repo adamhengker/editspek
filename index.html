@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Auto Kolase Gambar - ADAM GAGAH</title>
+<title>Auto Kolase Gambar dengan Crop - ADAM GAGAH</title>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
 <style>
   body {
@@ -11,14 +11,32 @@
     font-family: 'Poppins', sans-serif;
     background: linear-gradient(145deg, #0d1b2a, #1b263b, #415a77);
     color: #e0f7f7;
-    display: flex; flex-direction: column; align-items: center;
     min-height: 100vh;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  body::before {
+    content: "ADAM GAGAH";
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-45deg);
+    font-size: 80px;
+    color: rgba(100, 223, 223, 0.07);
+    font-weight: 700;
+    pointer-events: none;
+    user-select: none;
+    z-index: 0;
+    white-space: nowrap;
+    letter-spacing: 10px;
   }
   h1 {
-    text-align: center;
     margin-bottom: 20px;
     font-weight: 600;
     text-shadow: 0 0 15px rgba(100,223,223,0.7);
+    z-index: 1;
   }
   #uploadSection {
     background: rgba(255,255,255,0.08);
@@ -26,8 +44,9 @@
     border-radius: 14px;
     box-shadow: 0 0 20px rgba(100,223,223,0.35);
     width: 100%;
-    max-width: 600px;
+    max-width: 700px;
     text-align: center;
+    z-index: 1;
   }
   input[type="file"] {
     background: #64dfdf;
@@ -43,21 +62,44 @@
   input[type="file"]:hover {
     background: #48bfe3;
   }
-  #canvasWrapper {
-    margin-top: 30px;
+  #cropContainer {
+    margin-top: 25px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 18px;
+    max-width: 900px;
+    width: 100%;
+    z-index: 1;
+  }
+  .cropBox {
+    width: 180px;
+    height: 180px;
+    overflow: hidden;
     position: relative;
-    background: rgba(255,255,255,0.08);
-    border-radius: 14px;
-    box-shadow: 0 0 20px rgba(100,223,223,0.35);
-    padding: 10px;
-  }
-  canvas {
-    display: block;
-    max-width: 100%;
     border-radius: 12px;
+    box-shadow: 0 0 15px rgba(100,223,223,0.35);
+    background: #0f1e33;
+    cursor: grab;
   }
-  #downloadBtn {
+  .cropBox:active {
+    cursor: grabbing;
+  }
+  .cropImg {
+    position: absolute;
+    top: 0; left: 0;
+    user-select: none;
+    -webkit-user-drag: none;
+    max-width: none;
+  }
+  #buttons {
     margin-top: 20px;
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    z-index: 1;
+  }
+  button {
     background: #64dfdf;
     border: none;
     padding: 14px 28px;
@@ -68,77 +110,170 @@
     box-shadow: 0 0 15px #64dfdf;
     transition: background-color 0.3s ease;
   }
-  #downloadBtn:hover {
+  button:hover {
     background: #48bfe3;
   }
-  .watermark {
-    position: absolute;
-    bottom: 12px;
-    right: 14px;
-    color: rgba(100,223,223,0.5);
-    font-weight: 700;
-    font-size: 18px;
-    user-select: none;
-    pointer-events: none;
+  #canvasWrapper {
+    margin-top: 30px;
+    max-width: 900px;
+    width: 100%;
+    background: rgba(255,255,255,0.08);
+    border-radius: 14px;
+    box-shadow: 0 0 20px rgba(100,223,223,0.35);
+    padding: 10px;
+    display: none;
+    z-index: 1;
+  }
+  canvas {
+    display: block;
+    max-width: 100%;
+    border-radius: 12px;
   }
   footer {
     margin-top: auto;
     font-size: 13px;
     color: rgba(255,255,255,0.4);
     font-weight: 600;
+    z-index: 1;
   }
 </style>
 </head>
 <body>
-  <h1>Auto Kolase Gambar</h1>
+  <h1>Auto Kolase Gambar dengan Crop</h1>
   <div id="uploadSection">
     <input type="file" id="imageInput" multiple accept="image/*" />
-    <p style="margin-top: 14px; font-size: 14px; color: #a0dede;">Pilih beberapa gambar (bebas jumlahnya), otomatis digabung jadi kolase.</p>
+    <p style="margin-top: 14px; font-size: 14px; color: #a0dede;">
+      Pilih beberapa gambar, lalu atur posisi crop dengan drag gambar di tiap kotak.
+    </p>
   </div>
-  <div id="canvasWrapper" style="display:none; position: relative;">
+
+  <div id="cropContainer"></div>
+
+  <div id="buttons">
+    <button id="createBtn" disabled>Buat Kolase</button>
+    <button id="resetBtn" disabled>Reset Semua</button>
+  </div>
+
+  <div id="canvasWrapper">
     <canvas id="collageCanvas"></canvas>
-    <div class="watermark">ADAM GAGAH</div>
   </div>
-  <button id="downloadBtn" style="display:none;">Download Kolase</button>
+
+  <button id="downloadBtn" style="display:none; margin-top:20px;">Download Kolase HD</button>
 
   <footer>© ADAM GAGAH</footer>
 
   <script>
     const imageInput = document.getElementById('imageInput');
+    const cropContainer = document.getElementById('cropContainer');
+    const createBtn = document.getElementById('createBtn');
+    const resetBtn = document.getElementById('resetBtn');
     const canvasWrapper = document.getElementById('canvasWrapper');
     const canvas = document.getElementById('collageCanvas');
     const ctx = canvas.getContext('2d');
     const downloadBtn = document.getElementById('downloadBtn');
 
-    // Fungsi bantu buat hitung layout kolase grid berdasarkan jumlah gambar
-    function calculateGrid(count) {
-      // Mendekati bentuk kotak (misal 5 gambar jadi 2x3 grid)
-      const cols = Math.ceil(Math.sqrt(count));
-      const rows = Math.ceil(count / cols);
-      return {cols, rows};
+    let cropData = []; // {img: Image, posX, posY, naturalWidth, naturalHeight}
+    let dragState = null; // {index, startX, startY, imgStartX, imgStartY}
+
+    function createCropBoxes(images) {
+      cropContainer.innerHTML = '';
+      cropData = [];
+
+      images.forEach((img, idx) => {
+        // Reset position
+        const posX = 0;
+        const posY = 0;
+
+        const cropBox = document.createElement('div');
+        cropBox.className = 'cropBox';
+
+        const cropImg = document.createElement('img');
+        cropImg.src = img.src;
+        cropImg.className = 'cropImg';
+
+        // Set natural size for calculations
+        cropImg.style.top = posY + 'px';
+        cropImg.style.left = posX + 'px';
+
+        cropBox.appendChild(cropImg);
+        cropContainer.appendChild(cropBox);
+
+        cropData.push({
+          img,
+          posX,
+          posY,
+          naturalWidth: img.naturalWidth,
+          naturalHeight: img.naturalHeight,
+          cropBox,
+          cropImg
+        });
+
+        // Drag handling
+        cropImg.addEventListener('mousedown', (e) => {
+          e.preventDefault();
+          dragState = {
+            index: idx,
+            startX: e.clientX,
+            startY: e.clientY,
+            imgStartX: cropData[idx].posX,
+            imgStartY: cropData[idx].posY
+          };
+          cropImg.style.cursor = 'grabbing';
+        });
+        window.addEventListener('mouseup', () => {
+          if (dragState !== null) {
+            cropData[dragState.index].posX = cropData[dragState.index].posX;
+            cropData[dragState.index].posY = cropData[dragState.index].posY;
+            cropData[dragState.index].cropImg.style.cursor = 'grab';
+          }
+          dragState = null;
+        });
+        window.addEventListener('mousemove', (e) => {
+          if (!dragState) return;
+          e.preventDefault();
+
+          const data = cropData[dragState.index];
+          const cropBoxRect = data.cropBox.getBoundingClientRect();
+
+          let newX = data.imgStartX + (e.clientX - dragState.startX);
+          let newY = data.imgStartY + (e.clientY - dragState.startY);
+
+          // Batasi supaya gambar tidak keluar terlalu jauh dari cropBox (biar selalu cover cropBox)
+          const maxLeft = 0;
+          const maxTop = 0;
+          const minLeft = cropBoxRect.width - data.naturalWidth * (cropBoxRect.height / data.naturalHeight);
+          const minTop = cropBoxRect.height - cropBoxRect.height; // Karena kita scale height ke cropBox height
+
+          // Kalkulasi scale img supaya tinggi cropBox selalu penuh
+          const scale = cropBoxRect.height / data.naturalHeight;
+          const scaledWidth = data.naturalWidth * scale;
+
+          // Limit newX dan newY supaya minimal gambar masih nutup cropBox
+          if (newX > maxLeft) newX = maxLeft;
+          if (newX < cropBoxRect.width - scaledWidth) newX = cropBoxRect.width - scaledWidth;
+          if (newY !== 0) newY = 0; // Vertikal gak di geser karena kita sesuaikan tinggi pas cropBox tinggi
+
+          data.posX = newX;
+          data.posY = newY;
+          data.cropImg.style.left = newX + 'px';
+          data.cropImg.style.top = newY + 'px';
+        });
+      });
+      createBtn.disabled = false;
+      resetBtn.disabled = false;
+      downloadBtn.style.display = 'none';
+      canvasWrapper.style.display = 'none';
     }
 
-    function loadImages(files) {
-      return Promise.all(
-        Array.from(files).map(file => {
-          return new Promise((resolve, reject) => {
-            const img = new Image();
-            img.onload = () => resolve(img);
-            img.onerror = () => reject(new Error("Gagal load gambar"));
-            img.src = URL.createObjectURL(file);
-          });
-        })
-      );
-    }
-
-    function drawCollage(images) {
-      const count = images.length;
+    function drawCollage(imagesData, scale=1) {
+      const count = imagesData.length;
       if (count === 0) return;
 
-      const {cols, rows} = calculateGrid(count);
+      // Grid sama seperti sebelumnya
+      const cols = Math.ceil(Math.sqrt(count));
+      const rows = Math.ceil(count / cols);
 
-      // Ukuran canvas diset fix 900px width, height proporsional
-      const canvasWidth = 900;
+      const canvasWidth = 900 * scale;
       const canvasHeight = Math.floor(canvasWidth * rows / cols);
 
       canvas.width = canvasWidth;
@@ -149,64 +284,94 @@
       const cellWidth = canvasWidth / cols;
       const cellHeight = canvasHeight / rows;
 
-      images.forEach((img, i) => {
+      imagesData.forEach((data, i) => {
         const col = i % cols;
         const row = Math.floor(i / cols);
 
-        // Ukuran gambar di cell disesuaikan
-        // Supaya gambar cover cell dan tidak ada jarak putih (crop jika perlu)
-        let iw = img.width;
-        let ih = img.height;
-        let aspectImg = iw / ih;
-        let aspectCell = cellWidth / cellHeight;
+        const x = col * cellWidth;
+        const y = row * cellHeight;
 
-        let drawWidth, drawHeight, dx, dy;
+        // Crop dan draw sesuai posisi posX, posY dan ukuran cropBox (180x180)
+        const cropBoxSize = 180;
 
-        if (aspectImg > aspectCell) {
-          // Gambar lebih lebar, crop sisi kiri dan kanan
-          drawHeight = cellHeight;
-          drawWidth = aspectImg * drawHeight;
-          dx = col * cellWidth - (drawWidth - cellWidth) / 2;
-          dy = row * cellHeight;
-        } else {
-          // Gambar lebih tinggi, crop atas bawah
-          drawWidth = cellWidth;
-          drawHeight = drawWidth / aspectImg;
-          dx = col * cellWidth;
-          dy = row * cellHeight - (drawHeight - cellHeight) / 2;
-        }
+        const scaleFactor = (cellHeight / cropBoxSize) * scale;
 
-        ctx.drawImage(img, dx, dy, drawWidth, drawHeight);
+        // Ukuran natural gambar
+        const nw = data.naturalWidth;
+        const nh = data.naturalHeight;
+
+        // Skala tinggi gambar agar pas cropBox tinggi (180)
+        const scaleImg = cropBoxSize / nh;
+
+        // Posisi crop dari gambar natural
+        const cropX = -data.posX / scaleImg;
+        const cropY = 0; // Vertikal tidak geser karena sudah pas tinggi cropBox
+
+        const cropW = cropBoxSize / scaleImg;
+        const cropH = nh;
+
+        // Ukuran gambar di canvas cell
+        const drawW = nw * scaleImg * scaleFactor;
+        const drawH = nh * scaleImg * scaleFactor;
+
+        ctx.drawImage(
+          data.img,
+          cropX, cropY, cropW, cropH,
+          x, y,
+          drawW, drawH
+        );
       });
-
-      // Tambah watermark di pojok kanan bawah
-      ctx.font = '24px Poppins, sans-serif';
-      ctx.fillStyle = 'rgba(100, 223, 223, 0.4)';
-      ctx.textAlign = 'right';
-      ctx.textBaseline = 'bottom';
-      ctx.fillText('ADAM GAGAH', canvasWidth - 14, canvasHeight - 14);
     }
 
     imageInput.addEventListener('change', async (e) => {
       const files = e.target.files;
       if (files.length === 0) return;
 
-      try {
-        const images = await loadImages(files);
-        drawCollage(images);
-        canvasWrapper.style.display = 'block';
-        downloadBtn.style.display = 'inline-block';
-      } catch (error) {
-        alert("Gagal memuat gambar. Coba ulangi.");
-        console.error(error);
-      }
+      const images = await Promise.all(Array.from(files).map(file => {
+        return new Promise((resolve, reject) => {
+          const img = new Image();
+          img.onload = () => resolve(img);
+          img.onerror = () => reject(new Error("Gagal load gambar"));
+          img.src = URL.createObjectURL(file);
+        });
+      }));
+
+      createCropBoxes(images);
+    });
+
+    createBtn.addEventListener('click', () => {
+      drawCollage(cropData, 1);
+      canvasWrapper.style.display = 'block';
+      downloadBtn.style.display = 'inline-block';
+    });
+
+    resetBtn.addEventListener('click', () => {
+      cropContainer.innerHTML = '';
+      cropData = [];
+      imageInput.value = '';
+      canvasWrapper.style.display = 'none';
+      downloadBtn.style.display = 'none';
+      createBtn.disabled = true;
+      resetBtn.disabled = true;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
     });
 
     downloadBtn.addEventListener('click', () => {
+      if (cropData.length === 0) return;
+
+      drawCollage(cropData, 2); // HD 2x
+
+      const hdImage = canvas.toDataURL('image/png');
+
+      drawCollage(cropData, 1);
+
       const link = document.createElement('a');
       link.download = 'kolase-adam-gagah.png';
-      link.href = canvas.toDataURL('image/png');
+      link.href = hdImage;
       link.click();
+
+      // Reset gambar & UI setelah download
+      resetBtn.click();
     });
   </script>
 </body>
