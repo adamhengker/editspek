@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Auto Kolase Gambar - ADAM GAGAH</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
+<style>
+  body {
+    margin: 0; padding: 20px;
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(145deg, #0d1b2a, #1b263b, #415a77);
+    color: #e0f7f7;
+    display: flex; flex-direction: column; align-items: center;
+    min-height: 100vh;
+  }
+  h1 {
+    text-align: center;
+    margin-bottom: 20px;
+    font-weight: 600;
+    text-shadow: 0 0 15px rgba(100,223,223,0.7);
+  }
+  #uploadSection {
+    background: rgba(255,255,255,0.08);
+    padding: 20px;
+    border-radius: 14px;
+    box-shadow: 0 0 20px rgba(100,223,223,0.35);
+    width: 100%;
+    max-width: 600px;
+    text-align: center;
+  }
+  input[type="file"] {
+    background: #64dfdf;
+    border: none;
+    padding: 10px 16px;
+    color: #000;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 0 15px #64dfdf;
+    transition: background-color 0.3s ease;
+  }
+  input[type="file"]:hover {
+    background: #48bfe3;
+  }
+  #canvasWrapper {
+    margin-top: 30px;
+    position: relative;
+    background: rgba(255,255,255,0.08);
+    border-radius: 14px;
+    box-shadow: 0 0 20px rgba(100,223,223,0.35);
+    padding: 10px;
+  }
+  canvas {
+    display: block;
+    max-width: 100%;
+    border-radius: 12px;
+  }
+  #downloadBtn {
+    margin-top: 20px;
+    background: #64dfdf;
+    border: none;
+    padding: 14px 28px;
+    font-weight: 700;
+    font-size: 16px;
+    border-radius: 10px;
+    cursor: pointer;
+    box-shadow: 0 0 15px #64dfdf;
+    transition: background-color 0.3s ease;
+  }
+  #downloadBtn:hover {
+    background: #48bfe3;
+  }
+  .watermark {
+    position: absolute;
+    bottom: 12px;
+    right: 14px;
+    color: rgba(100,223,223,0.5);
+    font-weight: 700;
+    font-size: 18px;
+    user-select: none;
+    pointer-events: none;
+  }
+  footer {
+    margin-top: auto;
+    font-size: 13px;
+    color: rgba(255,255,255,0.4);
+    font-weight: 600;
+  }
+</style>
+</head>
+<body>
+  <h1>Auto Kolase Gambar</h1>
+  <div id="uploadSection">
+    <input type="file" id="imageInput" multiple accept="image/*" />
+    <p style="margin-top: 14px; font-size: 14px; color: #a0dede;">Pilih beberapa gambar (bebas jumlahnya), otomatis digabung jadi kolase.</p>
+  </div>
+  <div id="canvasWrapper" style="display:none; position: relative;">
+    <canvas id="collageCanvas"></canvas>
+    <div class="watermark">ADAM GAGAH</div>
+  </div>
+  <button id="downloadBtn" style="display:none;">Download Kolase</button>
+
+  <footer>© ADAM GAGAH</footer>
+
+  <script>
+    const imageInput = document.getElementById('imageInput');
+    const canvasWrapper = document.getElementById('canvasWrapper');
+    const canvas = document.getElementById('collageCanvas');
+    const ctx = canvas.getContext('2d');
+    const downloadBtn = document.getElementById('downloadBtn');
+
+    // Fungsi bantu buat hitung layout kolase grid berdasarkan jumlah gambar
+    function calculateGrid(count) {
+      // Mendekati bentuk kotak (misal 5 gambar jadi 2x3 grid)
+      const cols = Math.ceil(Math.sqrt(count));
+      const rows = Math.ceil(count / cols);
+      return {cols, rows};
+    }
+
+    function loadImages(files) {
+      return Promise.all(
+        Array.from(files).map(file => {
+          return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => resolve(img);
+            img.onerror = () => reject(new Error("Gagal load gambar"));
+            img.src = URL.createObjectURL(file);
+          });
+        })
+      );
+    }
+
+    function drawCollage(images) {
+      const count = images.length;
+      if (count === 0) return;
+
+      const {cols, rows} = calculateGrid(count);
+
+      // Ukuran canvas diset fix 900px width, height proporsional
+      const canvasWidth = 900;
+      const canvasHeight = Math.floor(canvasWidth * rows / cols);
+
+      canvas.width = canvasWidth;
+      canvas.height = canvasHeight;
+
+      ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+
+      const cellWidth = canvasWidth / cols;
+      const cellHeight = canvasHeight / rows;
+
+      images.forEach((img, i) => {
+        const col = i % cols;
+        const row = Math.floor(i / cols);
+
+        // Ukuran gambar di cell disesuaikan
+        // Supaya gambar cover cell dan tidak ada jarak putih (crop jika perlu)
+        let iw = img.width;
+        let ih = img.height;
+        let aspectImg = iw / ih;
+        let aspectCell = cellWidth / cellHeight;
+
+        let drawWidth, drawHeight, dx, dy;
+
+        if (aspectImg > aspectCell) {
+          // Gambar lebih lebar, crop sisi kiri dan kanan
+          drawHeight = cellHeight;
+          drawWidth = aspectImg * drawHeight;
+          dx = col * cellWidth - (drawWidth - cellWidth) / 2;
+          dy = row * cellHeight;
+        } else {
+          // Gambar lebih tinggi, crop atas bawah
+          drawWidth = cellWidth;
+          drawHeight = drawWidth / aspectImg;
+          dx = col * cellWidth;
+          dy = row * cellHeight - (drawHeight - cellHeight) / 2;
+        }
+
+        ctx.drawImage(img, dx, dy, drawWidth, drawHeight);
+      });
+
+      // Tambah watermark di pojok kanan bawah
+      ctx.font = '24px Poppins, sans-serif';
+      ctx.fillStyle = 'rgba(100, 223, 223, 0.4)';
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText('ADAM GAGAH', canvasWidth - 14, canvasHeight - 14);
+    }
+
+    imageInput.addEventListener('change', async (e) => {
+      const files = e.target.files;
+      if (files.length === 0) return;
+
+      try {
+        const images = await loadImages(files);
+        drawCollage(images);
+        canvasWrapper.style.display = 'block';
+        downloadBtn.style.display = 'inline-block';
+      } catch (error) {
+        alert("Gagal memuat gambar. Coba ulangi.");
+        console.error(error);
+      }
+    });
+
+    downloadBtn.addEventListener('click', () => {
+      const link = document.createElement('a');
+      link.download = 'kolase-adam-gagah.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    });
+  </script>
+</body>
+</html>
